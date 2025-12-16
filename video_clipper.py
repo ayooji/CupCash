@@ -91,7 +91,10 @@ def get_video_duration(video_path: str) -> float:
     Returns:
         Duration in seconds
     """
-    from moviepy.editor import VideoFileClip
+    try:
+        from moviepy import VideoFileClip
+    except ImportError:
+        from moviepy.editor import VideoFileClip
 
     with VideoFileClip(video_path) as video:
         return video.duration
@@ -117,7 +120,12 @@ def create_clip(
     Returns:
         True if successful, False otherwise
     """
-    from moviepy.editor import VideoFileClip
+    try:
+        from moviepy import VideoFileClip
+        use_new_api = True
+    except ImportError:
+        from moviepy.editor import VideoFileClip
+        use_new_api = False
 
     try:
         if verbose:
@@ -125,7 +133,11 @@ def create_clip(
             print(f"  Output: {output_path}")
 
         with VideoFileClip(input_path) as video:
-            clip = video.subclip(start_time, end_time)
+            # moviepy 2.0+ uses with_subclip(), older versions use subclip()
+            if use_new_api:
+                clip = video.with_subclip(start_time, end_time)
+            else:
+                clip = video.subclip(start_time, end_time)
             clip.write_videofile(
                 output_path,
                 codec='libx264',
